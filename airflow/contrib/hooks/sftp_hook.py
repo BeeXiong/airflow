@@ -19,7 +19,6 @@
 
 import stat
 import pysftp
-import logging
 import datetime
 from airflow.contrib.hooks.ssh_hook import SSHHook
 
@@ -31,13 +30,15 @@ class SFTPHook(SSHHook):
 
     Interact with SFTP. Aims to be interchangeable with FTPHook.
 
-    Pitfalls: - In contrast with FTPHook describe_directory only returns size, type and
-                modify. It doesn't return unix.owner, unix.mode, perm, unix.group and
-                unique.
-              - retrieve_file and store_file only take a local full path and not a
-                buffer.
-              - If no mode is passed to create_directory it will be created with 777
-                permissions.
+    :Pitfalls::
+
+        - In contrast with FTPHook describe_directory only returns size, type and
+          modify. It doesn't return unix.owner, unix.mode, perm, unix.group and
+          unique.
+        - retrieve_file and store_file only take a local full path and not a
+           buffer.
+        - If no mode is passed to create_directory it will be created with 777
+          permissions.
 
     Errors that may occur throughout but should be handled downstream.
     """
@@ -126,6 +127,7 @@ class SFTPHook(SSHHook):
         """
         Returns a dictionary of {filename: {attributes}} for all files
         on the remote system (where the MLSD command is supported).
+
         :param path: full path to the remote directory
         :type path: str
         """
@@ -144,6 +146,7 @@ class SFTPHook(SSHHook):
     def list_directory(self, path):
         """
         Returns a list of files on the remote system.
+
         :param path: full path to the remote directory to list
         :type path: str
         """
@@ -154,6 +157,7 @@ class SFTPHook(SSHHook):
     def create_directory(self, path, mode=777):
         """
         Creates a directory on the remote system.
+
         :param path: full path to the remote directory to create
         :type path: str
         :param mode: int representation of octal mode for directory
@@ -164,6 +168,7 @@ class SFTPHook(SSHHook):
     def delete_directory(self, path):
         """
         Deletes a directory on the remote system.
+
         :param path: full path to the remote directory to delete
         :type path: str
         """
@@ -175,22 +180,23 @@ class SFTPHook(SSHHook):
         Transfers the remote file to a local location.
         If local_full_path is a string path, the file will be put
         at that location
+
         :param remote_full_path: full path to the remote file
         :type remote_full_path: str
         :param local_full_path: full path to the local file
         :type local_full_path: str
         """
         conn = self.get_conn()
-        logging.info('Retrieving file from FTP: {}'.format(remote_full_path))
+        self.log.info('Retrieving file from FTP: %s', remote_full_path)
         conn.get(remote_full_path, local_full_path)
-        logging.info('Finished retrieving file from FTP: {}'.format(
-            remote_full_path))
+        self.log.info('Finished retrieving file from FTP: %s', remote_full_path)
 
     def store_file(self, remote_full_path, local_full_path):
         """
         Transfers a local file to the remote location.
         If local_full_path_or_buffer is a string path, the file will be read
         from that location
+
         :param remote_full_path: full path to the remote file
         :type remote_full_path: str
         :param local_full_path: full path to the local file
@@ -202,6 +208,7 @@ class SFTPHook(SSHHook):
     def delete_file(self, path):
         """
         Removes a file on the FTP Server
+
         :param path: full path to the remote file
         :type path: str
         """
@@ -212,3 +219,13 @@ class SFTPHook(SSHHook):
         conn = self.get_conn()
         ftp_mdtm = conn.stat(path).st_mtime
         return datetime.datetime.fromtimestamp(ftp_mdtm).strftime('%Y%m%d%H%M%S')
+
+    def path_exists(self, path):
+        """
+        Returns True if a remote entity exists
+
+        :param path: full path to the remote file or directory
+        :type path: str
+        """
+        conn = self.get_conn()
+        return conn.exists(path)

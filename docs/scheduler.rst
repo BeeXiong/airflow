@@ -1,4 +1,4 @@
-..  Licensed to the Apache Software Foundation (ASF) under one
+ .. Licensed to the Apache Software Foundation (ASF) under one
     or more contributor license agreements.  See the NOTICE file
     distributed with this work for additional information
     regarding copyright ownership.  The ASF licenses this file
@@ -6,14 +6,16 @@
     "License"); you may not use this file except in compliance
     with the License.  You may obtain a copy of the License at
 
-..    http://www.apache.org/licenses/LICENSE-2.0
+ ..   http://www.apache.org/licenses/LICENSE-2.0
 
-..  Unless required by applicable law or agreed to in writing,
+ .. Unless required by applicable law or agreed to in writing,
     software distributed under the License is distributed on an
     "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
     KIND, either express or implied.  See the License for the
     specific language governing permissions and limitations
     under the License.
+
+
 
 Scheduling & Triggers
 =====================
@@ -39,9 +41,9 @@ has ended.
 start date, at the END of the period.
 
 The scheduler starts an instance of the executor specified in the your
-``airflow.cfg``. If it happens to be the ``LocalExecutor``, tasks will be
-executed as subprocesses; in the case of ``CeleryExecutor`` and
-``MesosExecutor``, tasks are executed remotely.
+``airflow.cfg``. If it happens to be the :class:`airflow.contrib.executors.local_executor.LocalExecutor`, tasks will be
+executed as subprocesses; in the case of :class:`airflow.executors.celery_executor.CeleryExecutor`, :class:`airflow.executors.dask_executor.DaskExecutor``, and
+:class:`airflow.contrib.executors.mesos_executor.MesosExecutor`, tasks are executed remotely.
 
 To start a scheduler, simply run the command:
 
@@ -62,24 +64,26 @@ preferably a
 a ``str``, or a ``datetime.timedelta`` object. Alternatively, you can also
 use one of these cron "preset":
 
-+--------------+----------------------------------------------------------------+---------------+
-| preset       | meaning                                                        | cron          |
-+==============+================================================================+===============+
-| ``None``     | Don't schedule, use for exclusively "externally triggered"     |               |
-|              | DAGs                                                           |               |
-+--------------+----------------------------------------------------------------+---------------+
-| ``@once``    | Schedule once and only once                                    |               |
-+--------------+----------------------------------------------------------------+---------------+
-| ``@hourly``  | Run once an hour at the beginning of the hour                  | ``0 * * * *`` |
-+--------------+----------------------------------------------------------------+---------------+
-| ``@daily``   | Run once a day at midnight                                     | ``0 0 * * *`` |
-+--------------+----------------------------------------------------------------+---------------+
-| ``@weekly``  | Run once a week at midnight on Sunday morning                  | ``0 0 * * 0`` |
-+--------------+----------------------------------------------------------------+---------------+
-| ``@monthly`` | Run once a month at midnight of the first day of the month     | ``0 0 1 * *`` |
-+--------------+----------------------------------------------------------------+---------------+
-| ``@yearly``  | Run once a year at midnight of January 1                       | ``0 0 1 1 *`` |
-+--------------+----------------------------------------------------------------+---------------+
++----------------+----------------------------------------------------------------+-----------------+
+| preset         | meaning                                                        | cron            |
++================+================================================================+=================+
+| ``None``       | Don't schedule, use for exclusively "externally triggered"     |                 |
+|                | DAGs                                                           |                 |
++----------------+----------------------------------------------------------------+-----------------+
+| ``@once``      | Schedule once and only once                                    |                 |
++----------------+----------------------------------------------------------------+-----------------+
+| ``@hourly``    | Run once an hour at the beginning of the hour                  | ``0 * * * *``   |
++----------------+----------------------------------------------------------------+-----------------+
+| ``@daily``     | Run once a day at midnight                                     | ``0 0 * * *``   |
++----------------+----------------------------------------------------------------+-----------------+
+| ``@weekly``    | Run once a week at midnight on Sunday morning                  | ``0 0 * * 0``   |
++----------------+----------------------------------------------------------------+-----------------+
+| ``@monthly``   | Run once a month at midnight of the first day of the month     | ``0 0 1 * *``   |
++----------------+----------------------------------------------------------------+-----------------+
+| ``@quarterly`` | Run once a quarter at midnight on the first day                | ``0 0 1 */3 *`` |
++----------------+----------------------------------------------------------------+-----------------+
+| ``@yearly``    | Run once a year at midnight of January 1                       | ``0 0 1 1 *``   |
++----------------+----------------------------------------------------------------+-----------------+
 
 **Note**: Use ``schedule_interval=None`` and not ``schedule_interval='None'`` when
 you don't want to schedule your DAG.
@@ -122,7 +126,7 @@ interval series.
 
 
     default_args = {
-        'owner': 'airflow',
+        'owner': 'Airflow',
         'depends_on_past': False,
         'start_date': datetime(2015, 12, 1),
         'email': ['airflow@example.com'],
@@ -130,7 +134,7 @@ interval series.
         'email_on_retry': False,
         'retries': 1,
         'retry_delay': timedelta(minutes=5),
-        'schedule_interval': '@hourly',
+        'schedule_interval': '@daily',
     }
 
     dag = DAG('tutorial', catchup=False, default_args=default_args)
@@ -184,3 +188,7 @@ Here are some of the ways you can **unblock tasks**:
 * The ``airflow backfill`` CLI subcommand has a flag to ``--mark_success`` and allows selecting
   subsections of the DAG as well as specifying date ranges.
 
+If you want to use 'external trigger' to run future-dated execution dates, set ``allow_trigger_in_future = True`` in ``scheduler`` section in ``airflow.cfg``.
+This only has effect if your DAG has no ``schedule_interval``.
+If you keep default ``allow_trigger_in_future = False`` and try 'external trigger' to run future-dated execution dates,
+the scheduler won't execute it now but the scheduler will execute it in the future once the current date rolls over to the execution date.

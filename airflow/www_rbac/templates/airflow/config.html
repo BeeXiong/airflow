@@ -15,7 +15,8 @@
   limitations under the License.
 
 #}
-{% extends "airflow/master.html" %}
+
+{% extends base_template %}
 
 {% block title %}
     {{ title }}
@@ -31,10 +32,6 @@
 
     {% if subtitle %}
         <h5>{{ subtitle }}</h5>
-    {% endif %}
-
-    {% if code %}
-        <pre>{{ code }}</pre>
     {% endif %}
 
     {% if code_html %}

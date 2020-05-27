@@ -28,7 +28,7 @@ from airflow.exceptions import AirflowSensorTimeout
 
 class HdfsSensorFolderTests(unittest.TestCase):
     def setUp(self):
-        from tests.core import FakeHDFSHook
+        from tests.test_core import FakeHDFSHook
         self.hook = FakeHDFSHook
         self.log = logging.getLogger()
         self.log.setLevel(logging.DEBUG)
@@ -124,7 +124,7 @@ class HdfsSensorFolderTests(unittest.TestCase):
 
 class HdfsSensorRegexTests(unittest.TestCase):
     def setUp(self):
-        from tests.core import FakeHDFSHook
+        from tests.test_core import FakeHDFSHook
         self.hook = FakeHDFSHook
         self.log = logging.getLogger()
         self.log.setLevel(logging.DEBUG)
@@ -236,7 +236,7 @@ class HdfsSensorRegexTests(unittest.TestCase):
         self.log.debug('#' * 10)
         self.log.debug('Running %s', self._testMethodName)
         self.log.debug('#' * 10)
-        compiled_regex = re.compile("copying_file_\d+.txt")
+        compiled_regex = re.compile(r"copying_file_\d+.txt")
         task = HdfsSensorRegex(task_id='Should_match_the_regex_but_filesize',
                                filepath='/datadirectory/regex_dir',
                                regex=compiled_regex,

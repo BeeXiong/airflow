@@ -22,32 +22,17 @@ import unittest
 import shutil
 import tempfile
 
-from airflow import configuration
-from airflow import models, DAG
-from airflow.exceptions import AirflowSensorTimeout
+from airflow import DAG
 from airflow.contrib.sensors.file_sensor import FileSensor
-from airflow.settings import Session
+from airflow.exceptions import AirflowSensorTimeout
 from airflow.utils.timezone import datetime
 
-TEST_DAG_ID = 'unit_tests'
+TEST_DAG_ID = 'unit_tests_file_sensor'
 DEFAULT_DATE = datetime(2015, 1, 1)
-configuration.load_test_config()
-
-
-def reset(dag_id=TEST_DAG_ID):
-    session = Session()
-    tis = session.query(models.TaskInstance).filter_by(dag_id=dag_id)
-    tis.delete()
-    session.commit()
-    session.close()
-
-
-reset()
 
 
 class FileSensorTest(unittest.TestCase):
     def setUp(self):
-        configuration.load_test_config()
         from airflow.contrib.hooks.fs_hook import FSHook
         hook = FSHook()
         args = {
@@ -56,7 +41,6 @@ class FileSensorTest(unittest.TestCase):
             'provide_context': True
         }
         dag = DAG(TEST_DAG_ID + 'test_schedule_dag_once', default_args=args)
-        dag.schedule_interval = '@once'
         self.hook = hook
         self.dag = dag
 
@@ -124,6 +108,18 @@ class FileSensorTest(unittest.TestCase):
                      ignore_ti_state=True)
         finally:
             shutil.rmtree(dir)
+
+    def test_default_fs_conn_id(self):
+        with tempfile.NamedTemporaryFile() as tmp:
+            task = FileSensor(
+                task_id="test",
+                filepath=tmp.name[1:],
+                dag=self.dag,
+                timeout=0,
+            )
+            task._hook = self.hook
+            task.run(start_date=DEFAULT_DATE, end_date=DEFAULT_DATE,
+                     ignore_ti_state=True)
 
 
 if __name__ == '__main__':

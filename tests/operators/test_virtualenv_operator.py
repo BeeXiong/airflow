@@ -27,7 +27,9 @@ import unittest
 
 from subprocess import CalledProcessError
 
-from airflow import configuration, DAG
+import pytest
+
+from airflow import DAG
 from airflow.operators.python_operator import PythonVirtualenvOperator
 from airflow.utils import timezone
 
@@ -43,7 +45,6 @@ class TestPythonVirtualenvOperator(unittest.TestCase):
 
     def setUp(self):
         super(TestPythonVirtualenvOperator, self).setUp()
-        configuration.load_test_config()
         self.dag = DAG(
             'test_dag',
             default_args={
@@ -132,6 +133,8 @@ class TestPythonVirtualenvOperator(unittest.TestCase):
             return True
         self._run_as_operator(f, python_version='2.7', requirements=['dill'])
 
+    @pytest.mark.skipif(sys.version_info.major < 3,
+                        reason="Virtualenv for python 3 cannot work with python 2 only host")
     def test_python_3(self):
         def f():
             import sys
@@ -167,6 +170,8 @@ class TestPythonVirtualenvOperator(unittest.TestCase):
             return a
         self._run_as_operator(f, system_site_packages=False, use_dill=False, op_args=[4])
 
+    @pytest.mark.skipif(sys.version_info.major < 3,
+                        reason="Virtualenv for python 3 cannot work with python 2 only host")
     def test_string_args(self):
         def f():
             global virtualenv_string_args
@@ -205,3 +210,17 @@ class TestPythonVirtualenvOperator(unittest.TestCase):
         def f(**kwargs):
             return kwargs['templates_dict']['ds']
         self._run_as_operator(f, templates_dict={'ds': '{{ ds }}'})
+
+    def test_provide_context(self):
+        def fn():
+            pass
+        task = PythonVirtualenvOperator(
+            python_callable=fn,
+            python_version=sys.version_info[0],
+            task_id='task',
+            dag=self.dag,
+            provide_context=True,
+        )
+        self.assertTrue(
+            task.provide_context
+        )

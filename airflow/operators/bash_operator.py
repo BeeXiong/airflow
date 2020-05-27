@@ -36,9 +36,13 @@ class BashOperator(BaseOperator):
     """
     Execute a Bash script, command or set of commands.
 
+    .. seealso::
+        For more information on how to use this operator, take a look at the guide:
+        :ref:`howto/operator:BashOperator`
+
     :param bash_command: The command, set of commands or reference to a
         bash script (must be '.sh') to be executed. (templated)
-    :type bash_command: string
+    :type bash_command: str
     :param xcom_push: If xcom_push is True, the last line written to stdout
         will also be pushed to an XCom when the bash command completes.
     :type xcom_push: bool
@@ -68,6 +72,7 @@ class BashOperator(BaseOperator):
         self.env = env
         self.xcom_push_flag = xcom_push
         self.output_encoding = output_encoding
+        self.sub_process = None
 
     def execute(self, context):
         """
@@ -77,14 +82,14 @@ class BashOperator(BaseOperator):
         self.log.info("Tmp dir root location: \n %s", gettempdir())
 
         # Prepare env for child process.
-        if self.env is None:
-            self.env = os.environ.copy()
+        env = self.env
+        if env is None:
+            env = os.environ.copy()
         airflow_context_vars = context_to_airflow_vars(context, in_env_var_format=True)
-        self.log.info("Exporting the following env vars:\n" +
-                      '\n'.join(["{}={}".format(k, v)
-                                 for k, v in
-                                 airflow_context_vars.items()]))
-        self.env.update(airflow_context_vars)
+        self.log.debug('Exporting the following env vars:\n%s',
+                       '\n'.join(["{}={}".format(k, v)
+                                  for k, v in airflow_context_vars.items()]))
+        env.update(airflow_context_vars)
 
         self.lineage_data = self.bash_command
 
@@ -108,26 +113,24 @@ class BashOperator(BaseOperator):
                     os.setsid()
 
                 self.log.info("Running command: %s", self.bash_command)
-                sp = Popen(
+                self.sub_process = Popen(
                     ['bash', fname],
                     stdout=PIPE, stderr=STDOUT,
-                    cwd=tmp_dir, env=self.env,
+                    cwd=tmp_dir, env=env,
                     preexec_fn=pre_exec)
-
-                self.sp = sp
 
                 self.log.info("Output:")
                 line = ''
-                for line in iter(sp.stdout.readline, b''):
+                for line in iter(self.sub_process.stdout.readline, b''):
                     line = line.decode(self.output_encoding).rstrip()
                     self.log.info(line)
-                sp.wait()
+                self.sub_process.wait()
                 self.log.info(
                     "Command exited with return code %s",
-                    sp.returncode
+                    self.sub_process.returncode
                 )
 
-                if sp.returncode:
+                if self.sub_process.returncode:
                     raise AirflowException("Bash command failed")
 
         if self.xcom_push_flag:
@@ -135,4 +138,5 @@ class BashOperator(BaseOperator):
 
     def on_kill(self):
         self.log.info('Sending SIGTERM signal to bash process group')
-        os.killpg(os.getpgid(self.sp.pid), signal.SIGTERM)
+        if self.sub_process and hasattr(self.sub_process, 'pid'):
+            os.killpg(os.getpgid(self.sub_process.pid), signal.SIGTERM)

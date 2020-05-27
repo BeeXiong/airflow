@@ -25,18 +25,16 @@ This DAG relies on the following environment variables
 * GCP_SPANNER_INSTANCE_ID - Cloud Spanner instance ID.
 * GCP_SPANNER_DATABASE_ID - Cloud Spanner database ID.
 * GCP_SPANNER_CONFIG_NAME - The name of the instance's configuration. Values are of the
-    form projects/<gcp_project>/instanceConfigs/<configuration>.
-    See also:
-        https://cloud.google.com/spanner/docs/reference/rest/v1/projects.instanceConfigs#InstanceConfig
-        https://cloud.google.com/spanner/docs/reference/rest/v1/projects.instanceConfigs/list#google.spanner.admin.instance.v1.InstanceAdmin.ListInstanceConfigs
+  form ``projects/<gcp_project>/instanceConfigs/<configuration>``. See also:
+  https://cloud.google.com/spanner/docs/reference/rest/v1/projects.instanceConfigs#InstanceConfig
+  https://cloud.google.com/spanner/docs/reference/rest/v1/projects.instanceConfigs/list#google.spanner.admin.instance.v1.InstanceAdmin.ListInstanceConfigs
 * GCP_SPANNER_NODE_COUNT - Number of nodes allocated to the instance.
 * GCP_SPANNER_DISPLAY_NAME - The descriptive name for this instance as it appears in UIs.
-    Must be unique per project and between 4 and 30 characters in length.
+  Must be unique per project and between 4 and 30 characters in length.
 """
 
 import os
 
-import airflow
 from airflow import models
 from airflow.contrib.operators.gcp_spanner_operator import \
     CloudSpannerInstanceDeployOperator, \
@@ -45,6 +43,7 @@ from airflow.contrib.operators.gcp_spanner_operator import \
     CloudSpannerInstanceDatabaseDeployOperator, \
     CloudSpannerInstanceDatabaseUpdateOperator, \
     CloudSpannerInstanceDatabaseDeleteOperator
+from airflow.utils.dates import days_ago
 
 # [START howto_operator_spanner_arguments]
 GCP_PROJECT_ID = os.environ.get('GCP_PROJECT_ID', 'example-project')
@@ -59,7 +58,7 @@ OPERATION_ID = 'unique_operation_id'
 # [END howto_operator_spanner_arguments]
 
 default_args = {
-    'start_date': airflow.utils.dates.days_ago(1)
+    'start_date': days_ago(1)
 }
 
 with models.DAG(
