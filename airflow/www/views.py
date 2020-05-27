@@ -602,7 +602,7 @@ class Airflow(AirflowViewMixin, BaseView):
                 })
         return wwwutils.json_response(payload)
 
-    @expose('/task_stats')
+    @expose('/task_stats', methods=['POST'])
     @login_required
     @provide_session
     def task_stats(self, session=None):
@@ -610,9 +610,9 @@ class Airflow(AirflowViewMixin, BaseView):
         DagRun = models.DagRun
         Dag = models.DagModel
 
-        # Filter by get parameters
+        # Filter by post parameters
         selected_dag_ids = {
-            unquote(dag_id) for dag_id in request.args.get('dag_ids', '').split(',') if dag_id
+            unquote(dag_id) for dag_id in request.form.getlist('dag_ids') if dag_id
         }
 
         LastDagRun = (
