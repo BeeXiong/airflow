@@ -393,7 +393,7 @@
           container: "body",
         });
       });
-      d3.json("{{ url_for('airflow.task_stats') }})
+      d3.json("{{ url_for('airflow.task_stats') }}")
         .header("X-CSRFToken", "{{ csrf_token() }}")
         .post(encoded_dag_ids, function(error, json) {
         for(var dag_id in json) {
