@@ -38,6 +38,9 @@ class SequentialExecutor(BaseExecutor):
         self.commands_to_run = []
 
     def execute_async(self, key, command, queue=None, executor_config=None):
+        if command[0:3] != ["airflow", "tasks", "run"]:
+            raise ValueError('The command must start with ["airflow", "tasks", "run"].')
+
         self.commands_to_run.append((key, command,))
 
     def sync(self):
