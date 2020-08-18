@@ -231,10 +231,12 @@ class GKEPodOperator(KubernetesPodOperator):
                  location,
                  cluster_name,
                  gcp_conn_id='google_cloud_default',
+                 gcp_credentials=None,
                  *args,
                  **kwargs):
         super(GKEPodOperator, self).__init__(*args, **kwargs)
         self.project_id = project_id
+        self.gcp_credentials = gcp_credentials
         self.location = location
         self.cluster_name = cluster_name
         self.gcp_conn_id = gcp_conn_id
@@ -259,6 +261,14 @@ class GKEPodOperator(KubernetesPodOperator):
         # This is to avoid race conditions of reading/writing a single file
         with tempfile.NamedTemporaryFile() as conf_file:
             os.environ[KUBE_CONFIG_ENV_VAR] = conf_file.name
+
+            if self.gcp_credentials is not None:
+                # This solves most cases when we are logged in using the service key in Airflow.
+                # Don't display stdout/stderr for security reason
+                subprocess.check_call([
+                    "gcloud", "auth", "activate-service-account", "--key-file=%s" % self.gcp_credentials,
+                ])
+
             # Attempt to get/update credentials
             # We call gcloud directly instead of using google-cloud-python api
             # because there is no way to write kubernetes config to a file, which is
